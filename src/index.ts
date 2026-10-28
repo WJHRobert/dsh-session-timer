@@ -1,5 +1,5 @@
-﻿/**
- * dsh-session-timer 鈥?TypeScript source.
+/**
+ * dsh-session-timer — TypeScript source.
  *
  * Build with `pnpm build` (tsc). The repository ships the compiled `lib/`
  * because GitHub installs do not run build scripts.
@@ -30,7 +30,7 @@ export interface TimerConfig {
 
 /** The slice of the Cordis context this plugin relies on. */
 interface PluginContext {
-  logger: { info(message: string): void; debug(message: string): void }
+  logger?: { debug?(message: string): void }
   get(name: string): any
   on(event: string, listener: (session: any, event: any) => void): unknown
   effect(setup: () => () => void, label?: string): unknown
@@ -52,8 +52,17 @@ function formatTokens(tokens: number): string {
 
 export function apply(ctx: PluginContext, config: TimerConfig): void {
   const prefix = config.prefix
-  const log = (line: string) => ctx.logger.info(`${prefix} ${line}`)
   const open = new Map<string, { at: number | undefined; tokens: number | undefined }>()
+
+  const emit = (line: string): void => {
+    const message = `${prefix} ${line}`
+    console.log(message)
+    try {
+      ctx.logger?.debug?.(message)
+    } catch {
+      // A missing logger must never break the summary.
+    }
+  }
 
   const measureTokens = (session: any): number | undefined => {
     if (!config.showTokens) return undefined
@@ -63,12 +72,12 @@ export function apply(ctx: PluginContext, config: TimerConfig): void {
       const total = snapshot?.totalTokens
       return typeof total === 'number' && Number.isFinite(total) ? total : undefined
     } catch (error) {
-      ctx.logger.debug(`[session-timer] token measurement failed: ${String(error)}`)
+      console.debug(`[session-timer] token measurement failed: ${String(error)}`)
       return undefined
     }
   }
 
-  log(
+  emit(
     `loaded! enabled=${config.enabled} showDuration=${config.showDuration} showTokens=${config.showTokens}`,
   )
 
@@ -109,7 +118,7 @@ export function apply(ctx: PluginContext, config: TimerConfig): void {
       }
     }
 
-    log(`turn ended session=${id} ${parts.join(' ')}`)
+    emit(`turn ended session=${id} ${parts.join(' ')}`)
   })
 
   ctx.effect(() => () => open.clear(), 'session-timer: turn bookkeeping')

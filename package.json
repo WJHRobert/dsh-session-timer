@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "dsh-session-timer",
   "version": "0.1.0",
   "description": "Minimal DSH plugin: log one duration/token line at the end of every turn.",

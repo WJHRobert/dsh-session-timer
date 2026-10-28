@@ -1,47 +1,57 @@
-﻿# dsh-session-timer
+# dsh-session-timer
 
-涓€涓瀬绠€鐨?DSH锛圖eepSeek Harness锛夋彃浠讹細**鍦ㄦ瘡杞璇濈粨鏉熸椂锛屽線瀹夸富鏃ュ織鍐欎竴琛屾憳瑕?*鈥斺€旀湰杞€楁椂澶氬皯銆佹秷鑰椾簡澶氬皯 Token銆備笉璋冨閮?API锛屼笉鍐欎細璇濆巻鍙诧紝涓嶅仛 UI銆?
-## 绠€浠?
-DSH 鐨?`session/event` 浜嬩欢娴侀噷锛宍turn/start` 鍜?`turn/end` 鏍囪浜嗕竴杞璇濈殑濮嬬粓锛沗ctx.tokenMeter` 鑳界粰鍑轰細璇濆綋鍓嶇殑 Token 鍘嬪姏銆傝繖涓彃浠舵妸涓よ€呭涓婏細璁颁綇寮€濮嬫椂鍒讳笌 Token 鎬绘暟锛屽湪缁撴潫鏃剁畻鍑哄樊鍊煎苟鎵撲竴琛屾棩蹇椼€?
-鏍稿績鐗规€э細
+一个极简的 DSH（DeepSeek Harness）插件：**在每轮对话结束时，往 DSH 进程的控制台写一行摘要**——本轮耗时多少、消耗了多少 Token。不调外部 API，不写会话历史，不做 UI。
 
-- **闆跺閮ㄤ緷璧?*锛氶櫎 `schemastery`锛圖SH 鑷甫鐨勯厤缃牎楠屽簱锛夊涓嶅紩鍏ヤ换浣曞寘
-- **涓嶆薄鏌撲笂涓嬫枃**锛氬彧鍐欐棩蹇楋紝涓嶆敼妯″瀷鍘嗗彶銆佷笉娉ㄥ叆娑堟伅
-- **浼橀泤闄嶇骇**锛氱粍鍚堥噷娌℃湁 `token-meter` 鏃惰緭鍑?`tokens=?`锛屾彃浠剁収甯稿伐浣?- **閰嶇疆鍖?*锛氬紑鍏炽€佽€楁椂銆乀oken銆佹棩蹇楀墠缂€閮藉彲閰?- **灏忓埌鑳借瀹?*锛歚lib/index.js` 绾?150 琛岋紝閫傚悎浣滀负 DSH 鎻掍欢寮€鍙戠殑鍙傜収瀹炵幇
+## 简介
 
-## 瀹夎
+DSH 的 `session/event` 事件流里，`turn/start` 和 `turn/end` 标记了一轮对话的始终；`ctx.tokenMeter` 能给出会话当前的 Token 压力。这个插件把两者对上：记住开始时刻与 Token 总数，在结束时算出差值并打一行摘要。
 
-浠?GitHub 瀹夎锛堟帹鑽愶級锛?
+核心特性：
+
+- **零外部依赖**：除 `schemastery`（DSH 自带的配置校验库）外不引入任何包
+- **不污染上下文**：只写控制台输出，不改模型历史、不注入消息
+- **优雅降级**：组合里没有 `token-meter` 时输出 `tokens=?`，插件照常工作
+- **配置化**：开关、耗时、Token、前缀都可配
+- **小到能读完**：`lib/index.js` 约 130 行，适合作为 DSH 插件开发的参照实现
+
+## 安装
+
+从 GitHub 安装（推荐）：
+
 ```bash
 dsh plugin --profile web add github:WJHRobert/dsh-session-timer
 ```
 
-瀹夎瀹屾垚鍚庨噸鍚?`dsh web`锛岀粓绔簲鍑虹幇锛?
+安装完成后重启 `dsh web`，控制台应出现：
+
 ```text
 [session-timer] loaded! enabled=true showDuration=true showTokens=true
 ```
 
-> **鍏充簬 profile**锛歚dsh` 鐨勬瘡涓?profile 鏄竴濂楃嫭绔嬮厤缃€備笂闈㈣杩涚殑鏄?`web` profile锛汥esktop 瀹㈡埛绔敤鐨勬槸 `desktop` profile锛屼笖琚?CLI 鏄庣‘绂佹绠＄悊锛岃鏀瑰湪瀹㈡埛绔噷瀹夎銆傝鍦ㄥ摢涓?profile锛屽氨鍙湪鍝釜 profile 鐢熸晥銆?
-鏈湴寮€鍙戯紙涓嶅彂甯冧篃鑳借皟璇曪級锛?
+> **关于 profile**：`dsh` 的每个 profile 是一套独立配置。上面装进的是 `web` profile；Desktop 客户端用的是 `desktop` profile，且被 CLI 明确禁止管理，请改在客户端里安装。装在哪个 profile，就只在哪个 profile 生效。
+
+本地开发（不发布也能调试）：
+
 ```bash
-# 鏂瑰紡 A锛歭ink 瀹夎锛岃蛋瀹屾暣瀹夎閾捐矾
+# 方式 A：link 安装，走完整安装链路
 dsh plugin --profile web add link:/absolute/path/to/dsh-session-timer
 
-# 鏂瑰紡 B锛?-patch 瑕嗙洊灞傦紝鏀逛唬鐮佸悗閲嶅惎鍗崇敓鏁?dsh web --patch /absolute/path/to/dsh-session-timer/cordis.patch.yml
+# 方式 B：--patch 覆盖层，改代码后重启即生效
+dsh web --patch /absolute/path/to/dsh-session-timer/cordis.patch.yml
 ```
 
-## 閰嶇疆
+## 配置
 
-閰嶇疆椤归€氳繃 patch 瑕嗙洊 row 鐨?`config` 鐢熸晥銆傚瓧娈靛涓嬶細
+配置项通过 patch 覆盖 row 的 `config` 生效。字段如下：
 
-| 瀛楁 | 绫诲瀷 | 榛樿鍊?| 璇存槑 |
+| 字段 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `enabled` | `boolean` | `true` | 鎬诲紑鍏筹紝鍏抽棴鍚庡彧淇濈暀鍔犺浇鏃ュ織 |
-| `showDuration` | `boolean` | `true` | 鏄惁杈撳嚭鏈疆鑰楁椂 |
-| `showTokens` | `boolean` | `true` | 鏄惁杈撳嚭鏈疆 Token 澧為噺锛堜緷璧?`token-meter`锛?|
-| `prefix` | `string` | `"[session-timer]"` | 鏃ュ織琛屽墠缂€ |
+| `enabled` | `boolean` | `true` | 总开关，关闭后只保留加载日志 |
+| `showDuration` | `boolean` | `true` | 是否输出本轮耗时 |
+| `showTokens` | `boolean` | `true` | 是否输出本轮 Token 增量（依赖 `token-meter`） |
+| `prefix` | `string` | `"[session-timer]"` | 输出行前缀 |
 
-鍦?profile 鐨?`cordis.patch.yml`锛堟垨 `--patch` 瑕嗙洊灞傦級閲岃拷鍔狅細
+在 profile 的 `cordis.patch.yml`（或 `--patch` 覆盖层）里追加：
 
 ```yaml
 - id: session-timer
@@ -52,23 +62,31 @@ dsh plugin --profile web add link:/absolute/path/to/dsh-session-timer
     prefix: '[my-timer]'
 ```
 
-淇濆瓨鍚庯紝HMR 寮€鍚椂浼氬嵆鏃剁敓鏁堬紝鍚﹀垯閲嶅惎 `dsh web`銆?
-## 浣跨敤
+保存后，HMR 开启时会即时生效，否则重启 `dsh web`。
 
-瑁呭ソ鍚庢甯稿璇濆嵆鍙€傚彂涓€鏉′細瑙﹀彂宸ュ叿璋冪敤鐨勬秷鎭紝渚嬪锛?
+## 使用
+
+装好后正常对话即可。发一条会触发工具调用的消息，例如：
+
 ```text
-甯垜鍐欎竴涓?Python 鑴氭湰鎵撳嵃 1 鍒?10锛岀劧鍚庤繍琛屽畠銆?```
+帮我写一个 Python 脚本打印 1 到 10，然后运行它。
+```
 
-杩欎竴杞粨鏉熷悗锛岀粓绔細澶氬嚭涓€琛岋細
+这一轮结束后，控制台会多出一行：
 
 ```text
 [session-timer] turn ended session=01J... duration=42.7s tokens=+3184 (total 9120)
 ```
 
-- `duration`锛氫粠 `turn/start` 鍒?`turn/end` 鐨勫閽熸椂闂?- `tokens`锛氭嫭鍙峰鏄湰杞閲忥紝鎷彿鍐呮槸浼氳瘽绱锛堟潵鑷?`ctx.tokenMeter.measure()`锛?
-## 宸茬煡闄愬埗
+- `duration`：从 `turn/start` 到 `turn/end` 的墙钟时间
+- `tokens`：括号外是本轮增量，括号内是会话累计（来自 `ctx.tokenMeter.measure()`）
 
-- **鍙湪鏃ュ織閲岋紝涓嶅湪鐣岄潰閲?*锛氭憳瑕佸啓杩涘涓荤粓绔棩蹇楋紝Web 鐣岄潰鐪嬩笉鍒般€傝鍦ㄧ晫闈㈠睍绀洪渶瑕侀澶栫殑瀹㈡埛绔彃浠讹紙`dsh.client` + 娴忚鍣ㄥ崐鍖咃級锛屽埢鎰忔病鏈夊仛銆?- **Token 鏁板瓧鏄及绠?*锛氭暟鍊兼潵鑷?`dsh-token-meter` 鐨勫惎鍙戝紡浼扮畻锛堢害 4 瀛楃/token锛夛紝涓嶆槸璐﹀崟绾х簿纭€硷紱鍙戠敓鍘嬬缉鎴栭噸璇曟椂锛屽崟杞閲忓彲鑳戒负璐熴€?- **鑰楁椂鏄閽熸椂闂?*锛氬寘鍚瓑寰呯敤鎴峰鎵广€佸伐鍏锋墽琛屻€佹ā鍨嬫帓闃燂紝涓嶇瓑浜庢ā鍨嬬函鐢熸垚鏃堕棿銆?
+## 已知限制
+
+- **只在进程控制台里，不在界面里**：摘要用 `console.log` 写到 DSH 进程的标准输出——本构建的 Cordis logger 没有挂控制台 exporter，`ctx.logger.info` 没有可见落点。Web 界面和会话历史都看不到；要在界面展示，需要额外的客户端插件（`dsh.client` + 浏览器半包），刻意没有做。
+- **Token 数字是估算**：数值来自 `dsh-token-meter` 的启发式估算（约 4 字符/token），不是账单级精确值；发生压缩或重试时，单轮增量可能为负。
+- **耗时是墙钟时间**：包含等待用户审批、工具执行、模型排队，不等于模型纯生成时间。
+
 ## License
 
-[MIT](./LICENSE) 漏 2026 dsh-session-timer contributors
+[MIT](./LICENSE) © 2026 dsh-session-timer contributors
