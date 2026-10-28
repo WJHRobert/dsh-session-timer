@@ -1,0 +1,10 @@
+# Bundle patch: this file is the profile layer this package contributes.
+# The `insert` list appends one plugin row to the composed tree; the row id is
+# also the key later patch layers use to override this plugin's config.
+- insert:
+    - id: session-timer
+      name: dsh-session-timer
+      config:
+        enabled: true
+        showDuration: true
+        showTokens: true
